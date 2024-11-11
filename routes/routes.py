@@ -3,7 +3,7 @@ from functools import wraps
 import jwt
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app
-from app.models import Usuario, Clube, Livro  # Importa os modelos Usuario e Clube
+from app.models import Usuario, Clube, Livro, Avaliacao  # Importa os modelos Usuario e Clube
 from app.database import db  # Importa o objeto db
 
 
@@ -19,6 +19,7 @@ def gerador_token(user_id):
 usuarios_bp = Blueprint('usuarios', __name__)
 auth_bp = Blueprint('auth', __name__)
 livros_bp = Blueprint('Livros', __name__)
+avaliacoes_bp = Blueprint('avaliacoes', __name__)
 
 
 @auth_bp.route('/login', methods=['POST'])
@@ -286,6 +287,81 @@ def delete_livro(current_user, livro_id):
         db.session.delete(livro)
         db.session.commit()
         return jsonify({'message': 'Livro deletado com sucesso!'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 500
+
+@avaliacoes_bp.route('/livros/<int:livro_id>/avaliacoes', methods=['POST'])
+@requisicao_token
+def create_avaliacao(current_user, livro_id):
+    """Rota para criar uma nova avaliação para um livro."""
+    data = request.get_json()
+    comentario = data.get('comentario')
+    nota = data.get('nota')
+
+    if not nota or not isinstance(nota, int) or not (1 <= nota <= 5):
+        return jsonify({'message': 'Nota inválida, deve ser um número entre 1 e 5'}), 400
+
+    livro = Livro.query.get(livro_id)
+    if not livro:
+        return jsonify({'message': 'Livro não encontrado'}), 404
+
+    avaliacao = Avaliacao(comentario=comentario, nota=nota, id_livro=livro_id, id_usuario=current_user.id)
+
+    try:
+        db.session.add(avaliacao)
+        db.session.commit()
+        return jsonify({'message': 'Avaliação criada com sucesso!'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 500
+
+@avaliacoes_bp.route('/livros/<int:livro_id>/avaliacoes', methods=['GET'])
+def get_avaliacoes(livro_id):
+    """Rota para listar todas as avaliações de um livro."""
+    livro = Livro.query.get(livro_id)
+    if not livro:
+        return jsonify({'message': 'Livro não encontrado'}), 404
+
+    avaliacoes = Avaliacao.query.filter_by(id_livro=livro_id).all()
+    return jsonify([
+        {'id': avaliacao.id, 'comentario': avaliacao.comentario, 'nota': avaliacao.nota, 'id_usuario': avaliacao.id_usuario}
+        for avaliacao in avaliacoes
+    ])
+
+@avaliacoes_bp.route('/avaliacoes/<int:avaliacao_id>', methods=['PUT'])
+@requisicao_token
+def update_avaliacao(current_user, avaliacao_id):
+    """Rota para atualizar uma avaliação existente."""
+    data = request.get_json()
+    avaliacao = Avaliacao.query.get(avaliacao_id)
+
+    if not avaliacao or avaliacao.id_usuario != current_user.id:
+        return jsonify({'message': 'Avaliação não encontrada ou acesso negado'}), 404
+
+    avaliacao.comentario = data.get('comentario', avaliacao.comentario)
+    avaliacao.nota = data.get('nota', avaliacao.nota)
+
+    try:
+        db.session.commit()
+        return jsonify({'message': 'Avaliação atualizada com sucesso!'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 500
+
+@avaliacoes_bp.route('/avaliacoes/<int:avaliacao_id>', methods=['DELETE'])
+@requisicao_token
+def delete_avaliacao(current_user, avaliacao_id):
+    """Rota para deletar uma avaliação."""
+    avaliacao = Avaliacao.query.get(avaliacao_id)
+
+    if not avaliacao or avaliacao.id_usuario != current_user.id:
+        return jsonify({'message': 'Avaliação não encontrada ou acesso negado'}), 404
+
+    try:
+        db.session.delete(avaliacao)
+        db.session.commit()
+        return jsonify({'message': 'Avaliação deletada com sucesso!'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': str(e)}), 500

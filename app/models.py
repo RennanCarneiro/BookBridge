@@ -44,7 +44,7 @@ class Clube(db.Model):
         return f"<Clube {self.nome}>"
 
 class Livro(db.Model):
-    __tablename__ = 'Livros' # nome da tabela
+    __tablename__ = 'livros' # nome da tabela
 
     id = db.Column(db.Integer, primary_key=True)
     titulo = db.Column(db.String(100), nullable=False)
@@ -53,3 +53,15 @@ class Livro(db.Model):
 
     def __repr__(self):
         return f"<Livro {self.titulo} por {self.autor}>"
+
+class Avaliacao(db.Model):
+    __tablename__ = 'avaliacoes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    comentario = db.Column(db.String(255), nullable=True)
+    nota = db.Column(db.Integer, nullable=False)  # Exemplo de escala: 1 a 5
+    id_livro = db.Column(db.Integer, db.ForeignKey('livros.id'), nullable=False)
+    id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+
+    def __repr__(self):
+        return f"<Avaliacao {self.nota} para o Livro {self.id_livro}>"
