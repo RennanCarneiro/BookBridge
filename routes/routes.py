@@ -3,6 +3,8 @@ from functools import wraps
 import jwt
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app
+
+from app.app import logger
 from app.models import Usuario, Clube, Livro, Avaliacao  # Importa os modelos Usuario e Clube
 from app.database import db  # Importa o objeto db
 
@@ -12,6 +14,7 @@ def gerador_token(user_id):
 
     payload = {'user_id': user_id, 'exp': datetime.utcnow() + timedelta(hours=1)}  # expiração de uma hora para o token
     token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+    logger.info(f'Token gerado para user_id: {user_id}')
     return token
 
 
@@ -20,6 +23,7 @@ usuarios_bp = Blueprint('usuarios', __name__)
 auth_bp = Blueprint('auth', __name__)
 livros_bp = Blueprint('Livros', __name__)
 avaliacoes_bp = Blueprint('avaliacoes', __name__)
+stats_bp = Blueprint('stats', __name__)
 
 
 @auth_bp.route('/login', methods=['POST'])
@@ -34,9 +38,11 @@ def login():
     if usuario and usuario.check_password(senha):
         # Gera um token JWT
         token = gerador_token(usuario.id)
+        logger.info(f'Usuário {usuario.email} autenticado com sucesso.')
         return jsonify({'token': token}), 200
 
     # Se as credenciais forem inválidas
+    logger.warning(f'Tentativa de login com falha para o email: {email}')
     return jsonify({'message': 'Credenciais inválidas'}), 401
 
 
@@ -48,15 +54,19 @@ def requisicao_token(f):
     def decorated(*args, **kwargs):
         token = request.headers.get('Authorization')
         if not token:
+            logger.warning('Tentativa de acesso sem token de autenticação.')
             return jsonify({'message': 'Token é necessário'}), 401
 
         try:
             token = token.split(" ")[1]  # Token está no formato "Bearer <token>"
             payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
             current_user = Usuario.query.get(payload['user_id'])
+            logger.info(f'Acesso autorizado para user_id: {current_user.id}')
         except jwt.ExpiredSignatureError:
+            logger.warning('Token expirado')
             return jsonify({'message': 'Token expirado'}), 401
         except jwt.InvalidTokenError:
+            logger.error('Token inválido')
             return jsonify({'message': 'Token inválido'}), 401
 
         return f(current_user, *args, **kwargs)
@@ -73,6 +83,7 @@ def create_usuario():
     senha = data.get('senha')
 
     if not nome or not email or not senha:
+        logger.warning('Tentativa de criação de usuário com dados incompletos.')
         return jsonify({'message': 'Dados incompletos'}), 400
 
     usuario = Usuario(nome=nome, email=email)
@@ -81,9 +92,11 @@ def create_usuario():
     try:
         db.session.add(usuario)
         db.session.commit()
+        logger.info(f'Usuário criado com sucesso: {nome} (ID: {usuario.id})')
         return jsonify({'message': 'Usuário criado com sucesso!'}), 201
     except Exception as e:
         db.session.rollback()
+        logger.error(f'Erro ao criar usuário: {e}')
         return jsonify({'message': str(e)}), 500
 
 
@@ -101,6 +114,7 @@ def update_usuario(id):
     usuario = Usuario.query.get(id)
 
     if not usuario:
+        logger.warning(f'Tentativa de atualização de usuário não encontrado: ID {id}')
         return jsonify({'message': 'Usuário não encontrado'}), 404
 
     usuario.nome = data.get('nome', usuario.nome)
@@ -111,9 +125,11 @@ def update_usuario(id):
 
     try:
         db.session.commit()
+        logger.info(f'Usuário atualizado com sucesso: {usuario.nome} (ID: {usuario.id})')
         return jsonify({'message': 'Usuário atualizado com sucesso!'}), 200
     except Exception as e:
         db.session.rollback()
+        logger.error(f'Erro ao atualizar usuário: {e}')
         return jsonify({'message': str(e)}), 500
 
 
@@ -123,14 +139,17 @@ def delete_usuario(id):
     usuario = Usuario.query.get(id)
 
     if not usuario:
+        logger.warning(f'Tentativa de deleção de usuário não encontrado: ID {id}')
         return jsonify({'message': 'Usuário não encontrado'}), 404
 
     try:
         db.session.delete(usuario)
         db.session.commit()
+        logger.info(f'Usuário deletado com sucesso: {usuario.nome} (ID: {usuario.id})')
         return jsonify({'message': 'Usuário deletado com sucesso!'}), 200
     except Exception as e:
         db.session.rollback()
+        logger.error(f'Erro ao deletar usuário: {e}')
         return jsonify({'message': str(e)}), 500
 
 

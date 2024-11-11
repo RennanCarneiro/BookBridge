@@ -1,8 +1,14 @@
 # app/app.py
+import logging
 import os
 from flask import Flask  # Importando a biblioteca Flask
 from app.database import db
 from flask_migrate import Migrate
+
+# Configurações do logger
+logging.basicConfig(filename='app.log', level=logging.INFO,
+                    format='%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
+logger = logging.getLogger()
 
 # Inicializando o banco de dados e o sistema de migração
 migrate = Migrate()

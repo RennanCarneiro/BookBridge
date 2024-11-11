@@ -1,0 +1,18 @@
+2024-11-11 17:49:03,272 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000 [in C:\Users\Renan\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\_internal.py:97]
+2024-11-11 17:49:03,272 INFO: [33mPress CTRL+C to quit[0m [in C:\Users\Renan\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\_internal.py:97]
+2024-11-11 17:49:03,274 INFO:  * Restarting with stat [in C:\Users\Renan\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\_internal.py:97]
+2024-11-11 17:49:04,054 WARNING:  * Debugger is active! [in C:\Users\Renan\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\_internal.py:97]
+2024-11-11 17:49:04,058 INFO:  * Debugger PIN: 428-583-498 [in C:\Users\Renan\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\_internal.py:97]
+2024-11-11 17:49:37,863 INFO: Usuário criado com sucesso: Teste Usuario (ID: 3) [in C:\Users\Renan\PycharmProjects\BookBridge\routes\routes.py:95]
+2024-11-11 17:49:37,864 INFO: 127.0.0.1 - - [11/Nov/2024 17:49:37] "[35m[1mPOST /usuarios HTTP/1.1[0m" 201 - [in C:\Users\Renan\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\_internal.py:97]
+2024-11-11 17:50:17,122 ERROR: Erro ao criar usuário: (pymysql.err.IntegrityError) (1062, "Duplicate entry 'teste@example.com' for key 'email'")
+[SQL: INSERT INTO usuarios (nome, email, senha_hash) VALUES (%(nome)s, %(email)s, %(senha_hash)s)]
+[parameters: {'nome': 'Teste Usuario 2', 'email': 'teste@example.com', 'senha_hash': 'scrypt:32768:8:1$VaSs35I9Z3vtHHaR$ff6521b766d1b69432ede257690169eb13122957435e0287eb6be286b9d3e714fb9d3b8209bfac0ff0ce2b4633573cdb6fcaec65da5005e11f33de880f0a4ad3'}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj) [in C:\Users\Renan\PycharmProjects\BookBridge\routes\routes.py:99]
+2024-11-11 17:50:17,123 INFO: 127.0.0.1 - - [11/Nov/2024 17:50:17] "[35m[1mPOST /usuarios HTTP/1.1[0m" 500 - [in C:\Users\Renan\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\_internal.py:97]
+2024-11-11 17:50:27,721 INFO: Usuário criado com sucesso: Teste Usuario 2 (ID: 5) [in C:\Users\Renan\PycharmProjects\BookBridge\routes\routes.py:95]
+2024-11-11 17:50:27,721 INFO: 127.0.0.1 - - [11/Nov/2024 17:50:27] "[35m[1mPOST /usuarios HTTP/1.1[0m" 201 - [in C:\Users\Renan\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\_internal.py:97]
+2024-11-11 17:51:17,355 INFO: Token gerado para user_id: 3 [in C:\Users\Renan\PycharmProjects\BookBridge\routes\routes.py:17]
+2024-11-11 17:51:17,355 INFO: Usuário teste@example.com autenticado com sucesso. [in C:\Users\Renan\PycharmProjects\BookBridge\routes\routes.py:41]
+2024-11-11 17:51:17,355 INFO: 127.0.0.1 - - [11/Nov/2024 17:51:17] "POST /login HTTP/1.1" 200 - [in C:\Users\Renan\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\_internal.py:97]
