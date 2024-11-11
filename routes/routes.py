@@ -3,8 +3,7 @@ from functools import wraps
 import jwt
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app
-from app.models import Usuario, Clube  # Importa os modelos Usuario e Clube
-from werkzeug.security import check_password_hash
+from app.models import Usuario, Clube, Livro  # Importa os modelos Usuario e Clube
 from app.database import db  # Importa o objeto db
 
 
@@ -19,6 +18,7 @@ def gerador_token(user_id):
 # Blueprint para as rotas de usuários
 usuarios_bp = Blueprint('usuarios', __name__)
 auth_bp = Blueprint('auth', __name__)
+livros_bp = Blueprint('Livros', __name__)
 
 
 @auth_bp.route('/login', methods=['POST'])
@@ -201,6 +201,91 @@ def delete_clube(id):
         db.session.delete(clube)
         db.session.commit()
         return jsonify({'message': 'Clube deletado com sucesso!'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 500
+
+#criar livros
+@livros_bp.route('/clubes/<int:clube_id>/livros', methods=['POST'])
+@requisicao_token
+def create_livro(current_user, clube_id):
+    """Rota para adicionar um novo livro a um clube."""
+    data = request.get_json()
+    titulo = data.get('titulo')
+    autor = data.get('autor')
+
+    if not titulo or not autor:
+        return jsonify({'message': 'Dados incompletos'}), 400
+
+    clube = Clube.query.get(clube_id)
+    if not clube or clube.id_usuario_criador != current_user.id:
+        return jsonify({'message': 'Clube não encontrado ou acesso negado'}), 404
+
+    livro = Livro(titulo=titulo, autor=autor, id_clube=clube_id)
+
+    try:
+        db.session.add(livro)
+        db.session.commit()
+        return jsonify({'message': 'Livro adicionado com sucesso!'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 500
+
+#listar livros
+@livros_bp.route('/clubes/<int:clube_id>/livros', methods=['GET'])
+@requisicao_token
+def get_livros(current_user, clube_id):
+    """Rota para listar todos os livros de um clube."""
+    clube = Clube.query.get(clube_id)
+    if not clube or clube.id_usuario_criador != current_user.id:
+        return jsonify({'message': 'Clube não encontrado ou acesso negado'}), 404
+
+    livros = Livro.query.filter_by(id_clube=clube_id).all()
+    return jsonify([{'id': livro.id, 'titulo': livro.titulo, 'autor': livro.autor} for livro in livros])
+
+#Atualizar livros
+@livros_bp.route('/livros/<int:livro_id>', methods=['PUT'])
+@requisicao_token
+def update_livro(current_user, livro_id):
+    """Rota para atualizar as informações de um livro."""
+    data = request.get_json()
+    livro = Livro.query.get(livro_id)
+
+    if not livro:
+        return jsonify({'message': 'Livro não encontrado'}), 404
+
+    clube = Clube.query.get(livro.id_clube)
+    if clube.id_usuario_criador != current_user.id:
+        return jsonify({'message': 'Acesso negado'}), 403
+
+    livro.titulo = data.get('titulo', livro.titulo)
+    livro.autor = data.get('autor', livro.autor)
+
+    try:
+        db.session.commit()
+        return jsonify({'message': 'Livro atualizado com sucesso!'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 500
+
+#deletar livro(s)
+@livros_bp.route('/livros/<int:livro_id>', methods=['DELETE'])
+@requisicao_token
+def delete_livro(current_user, livro_id):
+    """Rota para deletar um livro."""
+    livro = Livro.query.get(livro_id)
+
+    if not livro:
+        return jsonify({'message': 'Livro não encontrado'}), 404
+
+    clube = Clube.query.get(livro.id_clube)
+    if clube.id_usuario_criador != current_user.id:
+        return jsonify({'message': 'Acesso negado'}), 403
+
+    try:
+        db.session.delete(livro)
+        db.session.commit()
+        return jsonify({'message': 'Livro deletado com sucesso!'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': str(e)}), 500
