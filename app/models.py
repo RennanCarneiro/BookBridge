@@ -1,7 +1,8 @@
 # app/models.py
 
-from app.app import db  # Importa o objeto db que representa o banco de dados
+from app.database import db  # Importa o objeto db que representa o banco de dados
 from werkzeug.security import generate_password_hash, check_password_hash  # Importa funções para gerar/verificar senhas
+
 
 # Definir modelo de dados Usuario
 class Usuario(db.Model):
@@ -27,6 +28,7 @@ class Usuario(db.Model):
     def __repr__(self):
         return f"<Usuario {self.nome}>"
 
+
 # Definir modelo de dados Clube
 class Clube(db.Model):
     __tablename__ = 'clubes'  # Define o nome da tabela
@@ -34,7 +36,8 @@ class Clube(db.Model):
     id = db.Column(db.Integer, primary_key=True)  # Define a coluna id como chave primária
     nome = db.Column(db.String(100), nullable=False)  # Define a coluna nome
     descricao = db.Column(db.String(255), nullable=True)  # Define a coluna descrição
-    id_usuario_criador = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)  # Chave estrangeira para o criador
+    id_usuario_criador = db.Column(db.Integer, db.ForeignKey('usuarios.id'),
+                                   nullable=False)  # Chave estrangeira para o criador
 
     # Método para representar o objeto como string
     def __repr__(self):
