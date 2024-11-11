@@ -3,11 +3,18 @@ from functools import wraps
 import jwt
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app
-
+from sqlalchemy import func
 from app.app import logger
 from app.models import Usuario, Clube, Livro, Avaliacao  # Importa os modelos Usuario e Clube
 from app.database import db  # Importa o objeto db
 
+# Blueprint para as rotas de usuários
+usuarios_bp = Blueprint('usuarios', __name__)
+auth_bp = Blueprint('auth', __name__)
+livros_bp = Blueprint('Livros', __name__)
+avaliacoes_bp = Blueprint('avaliacoes', __name__)
+stats_bp = Blueprint('stats', __name__)
+estatisticas_bp = Blueprint('estatisticas', __name__)
 
 def gerador_token(user_id):
     # gera um token valido por 1 hora
@@ -16,15 +23,6 @@ def gerador_token(user_id):
     token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
     logger.info(f'Token gerado para user_id: {user_id}')
     return token
-
-
-# Blueprint para as rotas de usuários
-usuarios_bp = Blueprint('usuarios', __name__)
-auth_bp = Blueprint('auth', __name__)
-livros_bp = Blueprint('Livros', __name__)
-avaliacoes_bp = Blueprint('avaliacoes', __name__)
-stats_bp = Blueprint('stats', __name__)
-
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -384,3 +382,27 @@ def delete_avaliacao(current_user, avaliacao_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': str(e)}), 500
+
+
+@estatisticas_bp.route('/estatisticas', methods=['GET'])
+def obter_estatisticas():
+    """Rota para obter estatísticas do sistema."""
+
+    # Total de livros e de clubes
+    total_livros = db.session.query(func.count(Livro.id)).scalar()
+    total_clubes = db.session.query(func.count(Clube.id)).scalar()
+
+    # Média de livros por clube (evitando divisão por zero)
+    media_livros_por_clube = total_livros / total_clubes if total_clubes > 0 else 0
+    media_livros_por_clube = round(media_livros_por_clube, 1)  # Limita a uma casa decimal
+
+    # Média de avaliações dos livros
+    media_avaliacoes = db.session.query(func.avg(Avaliacao.nota)).scalar() or 0
+    media_avaliacoes = round(media_avaliacoes, 1)  # Limita a uma casa decimal
+
+    estatisticas = {
+        'media_livros_por_clube': media_livros_por_clube,
+        'media_avaliacoes': media_avaliacoes,
+    }
+
+    return jsonify(estatisticas), 200
