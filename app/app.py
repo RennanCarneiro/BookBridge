@@ -19,8 +19,10 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
 
-    # Importando e registrando o blueprint de usuários
+    # Importando e registrando o blueprint de usuários e clubes
     from routes.routes import usuarios_bp
+    from routes.routes import usuarios_bp, clubes_bp
     app.register_blueprint(usuarios_bp)
+    app.register_blueprint(clubes_bp)
 
     return app
